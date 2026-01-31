@@ -1,0 +1,238 @@
+================================================================================
+                  SANGER QC & TRIM - GETTING STARTED
+================================================================================
+
+Welcome! This guide will get you up and running in 5 minutes.
+
+================================================================================
+STEP 1: INSTALLATION
+================================================================================
+
+cd /clusterfs/jgi/groups/science/homes/laureli/sanger_quality
+pip install .
+
+That's it! The 'sangerqc' command is now available.
+
+================================================================================
+STEP 2: VERIFY INSTALLATION
+================================================================================
+
+# Check the command is available
+sangerqc --help
+
+# You should see:
+#   Usage: sangerqc [OPTIONS] COMMAND [ARGS]...
+#   QC and trimming tool for Sanger sequencing reads
+#   Commands:
+#     qc     Perform QC analysis on Sanger sequencing reads.
+#     trim   Trim Sanger sequencing reads and output trimmed sequences.
+#     all    Perform both QC analysis and trimming.
+
+================================================================================
+STEP 3: RUN YOUR FIRST ANALYSIS
+================================================================================
+
+# Full QC + Trimming pipeline on your data
+sangerqc all seq_data/Y19/ -o my_results --recursive
+
+# This will:
+#   - Find all .ab1 and .phd.1 files in seq_data/Y19/
+#   - Compute QC metrics for each read
+#   - Trim sequences using Mott algorithm at Q20
+#   - Generate CSV, Parquet, JSON, and FASTQ outputs
+
+================================================================================
+STEP 4: CHECK YOUR RESULTS
+================================================================================
+
+# View summary statistics
+cat my_results/qc/summary.json
+
+# View per-read metrics
+cat my_results/qc/per_read_metrics.csv
+
+# Check trimmed sequences
+zcat my_results/trim/trimmed.fastq.gz | head -8
+
+# Check the log file
+cat my_results/logs/run.log
+
+================================================================================
+STEP 5: EXPLORE OPTIONS
+================================================================================
+
+# QC only (no trimming)
+sangerqc qc seq_data/Y19/ -o qc_only --recursive
+
+# High-stringency trimming (Q30 threshold, min length 100)
+sangerqc all seq_data/Y19/ -o high_quality \
+  --qthreshold 30 --min-length 100 --recursive
+
+# Conservative trimming (ends method)
+sangerqc trim seq_data/Y19/ -o conservative \
+  --method ends --out-fastq trimmed_ends.fastq.gz --recursive
+
+# Ambiguous base calling for heterozygous SNP detection (NEW!)
+sangerqc all seq_data/Y19/ -o snp_results \
+  --ambiguous-calling --mixed-context --recursive
+
+================================================================================
+WHAT YOU GET
+================================================================================
+
+Output directory structure:
+
+my_results/
+├── qc/
+│   ├── per_read_metrics.csv      # Per-read QC table (CSV)
+│   ├── per_read_metrics.parquet  # Per-read QC table (Parquet)
+│   └── summary.json              # Aggregated statistics
+├── trim/
+│   └── trimmed.fastq.gz         # Trimmed sequences
+├── base_calls/                   # With --ambiguous-calling flag
+│   ├── all_base_calls.csv       # Per-base annotations (SPR, SNR, IUPAC)
+│   └── all_base_calls.parquet   # Same in Parquet format
+└── logs/
+    └── run.log                   # Detailed run log
+
+================================================================================
+KEY METRICS EXPLAINED
+================================================================================
+
+mean_q        - Average quality score (higher is better)
+pct_q20       - Fraction of bases with Q≥20 (0.8 = 80%)
+pct_q30       - Fraction of bases with Q≥30
+gc_percent    - GC content percentage
+expected_errors - Sum of error probabilities (lower is better)
+trimmed_length - Length after trimming
+passed_minlen - "yes" if length ≥ min_length, "no" otherwise
+
+================================================================================
+COMMON USE CASES
+================================================================================
+
+1. STANDARD QC + TRIMMING
+   sangerqc all my_data/ -o results --recursive
+
+2. HIGH-QUALITY SUBSET
+   sangerqc all my_data/ -o high_q --qthreshold 30 --min-length 200 --recursive
+
+3. QC REPORT ONLY
+   sangerqc qc my_data/ -o qc_report --recursive
+
+4. CUSTOM TRIMMING
+   sangerqc trim my_data/ -o custom \
+     --method ends \
+     --qthreshold 25 \
+     --out-fastq my_trimmed.fastq.gz \
+     --out-fasta my_trimmed.fasta.gz \
+     --recursive
+
+5. HETEROZYGOUS SNP DETECTION (NEW!)
+   sangerqc all diploid_samples/ -o snp_results \
+     --ambiguous-calling --mixed-context --recursive
+
+6. PLASMID CLONE PURITY CHECK (NEW!)
+   sangerqc qc plasmid_clones/ -o purity_check \
+     --ambiguous-calling --clonal-context --recursive
+
+================================================================================
+TRIMMING METHODS
+================================================================================
+
+--method mott (default)
+  - Maximum-score subsequence approach
+  - Finds optimal quality region
+  - Best for: Balancing length and quality
+
+--method ends
+  - Hard clips from 5' and 3' ends
+  - Keeps first to last high-quality base
+  - Best for: Conservative trimming
+
+================================================================================
+NEED MORE HELP?
+================================================================================
+
+Documentation files:
+  README.md               - Complete documentation
+  QUICKSTART.md           - Quick reference guide
+  INSTALL.md              - Installation details
+  AMBIGUOUS_CALLING.md    - Ambiguous base calling guide (NEW!)
+  CHECKLIST.md            - Feature checklist
+
+Command help:
+  sangerqc --help
+  sangerqc qc --help
+  sangerqc trim --help
+  sangerqc all --help
+
+Example scripts:
+  python example_usage.py      - Programmatic usage examples
+  bash run_examples.sh         - CLI examples
+
+Verification:
+  python verify_algorithms.py  - Verify algorithms work correctly
+  pytest tests/                - Run full test suite
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+Problem: "No valid input files found"
+Solution: Ensure files are .ab1 or .phd.1, use --recursive for subdirectories
+
+Problem: Files are skipped with warnings
+Solution: Check logs/run.log for details; some AB1 files may lack quality data
+
+Problem: "Command not found: sangerqc"
+Solution: Ensure pip install completed; try: pip install --user .
+
+================================================================================
+NEXT STEPS
+================================================================================
+
+✓ Installation complete
+✓ First analysis run
+✓ Results reviewed
+
+Now you can:
+  1. Process your own Sanger sequencing data
+  2. Adjust quality thresholds as needed
+  3. Compare Mott vs Ends trimming methods
+  4. Integrate into your analysis pipeline
+  5. Review documentation for advanced options
+
+================================================================================
+QUICK REFERENCE
+================================================================================
+
+# Basic commands
+sangerqc all INPUT -o OUTPUT                    # Full pipeline
+sangerqc qc INPUT -o OUTPUT                     # QC only
+sangerqc trim INPUT -o OUTPUT                   # Trimming only
+
+# Common options
+--recursive                                     # Search subdirectories
+--qthreshold 20                                # Quality threshold (default: 20)
+--min-length 50                                # Min length (default: 50)
+--method mott|ends                             # Trimming method
+--verbose                                      # Verbose output
+--quiet                                        # Quiet mode
+
+# Trim options
+--out-fastq FILE.fastq.gz                      # Custom FASTQ output
+--out-fasta FILE.fasta.gz                      # Optional FASTA output
+
+# Ambiguous calling options (NEW!)
+--ambiguous-calling                            # Enable IUPAC ambiguity codes
+--clonal-context / --mixed-context             # Sample type
+--spr-noise 0.20                               # SPR noise threshold
+--spr-het-low 0.33                             # Heterozygous lower bound
+--spr-het-high 0.67                            # Heterozygous upper bound
+
+================================================================================
+
+You're ready to go! Happy sequencing QC! 🧬
+
+================================================================================

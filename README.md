@@ -1,4 +1,4 @@
-# Sanger QC & Trim
+# Sanger Quality Control & Trim
 
 A production-ready command-line tool for quality control and trimming of Sanger sequencing reads from `.ab1` (ABI chromatogram) and `.phd.1` (Phred base-caller) files.
 

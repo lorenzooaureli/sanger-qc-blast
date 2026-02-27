@@ -394,7 +394,7 @@ JGI Science, 2025
 
 ## License
 
-MIT License - see LICENSE file for details
+Custom License - No Paid Redistribution (see LICENSE)
 
 ## Support
 
